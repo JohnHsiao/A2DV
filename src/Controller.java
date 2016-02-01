@@ -13,16 +13,17 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.magiclen.dialog.Dialog;
 import org.magiclen.dialog.Dialog.DialogButtonEvent;
 import org.magiclen.dialog.Dialogs;
 
 import com.pi4j.gpio.extension.base.AdcGpioProvider;
-import com.pi4j.gpio.extension.mcp.MCP3008GpioProvider;
-import com.pi4j.gpio.extension.mcp.MCP3008Pin;
+import com.pi4j.gpio.extension.mcp.MCP3208GpioProvider;
+import com.pi4j.gpio.extension.mcp.MCP3208Pin;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinAnalogInput;
+import com.pi4j.io.gpio.event.GpioPinAnalogValueChangeEvent;
+import com.pi4j.io.gpio.event.GpioPinListenerAnalog;
 import com.pi4j.io.spi.SpiChannel;
 
 import dao.Dao;
@@ -36,17 +37,11 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
-import javafx.scene.control.SingleSelectionModel;
-import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontPosture;
-//import mcp.MCP3008;
-import javafx.scene.text.FontWeight;
 
 public class Controller implements Initializable {
 	
-	boolean debug=false; //開發階段
+	boolean debug=true; //開發階段
 	
 	int interval=1000;//預設間隔時間	
 
@@ -60,51 +55,38 @@ public class Controller implements Initializable {
 	
 	@FXML
 	private TabPane tab;
-
 	@FXML
-	public Label val;
-	
+	public Label val;	
 	@FXML
-	public Label valx;
-	
+	public Label valx;	
 	@FXML
-	public Label yearValue;
-	
+	public Label yearValue;		
 	@FXML
-	public Label dayValue;
-	
-	@FXML
-	public Label timeValue;
-	
-	private int year, month, day, hh, mm, ss;	
-	
+	public Label timeValue;	
 	public ExecutorService executor;
+	private AddToQueue addToQueue;
 
-	private AddToQueue addToQueue;	
-	
-	private Calendar c=Calendar.getInstance();
-
-	int num; //加權值
-	
+	int num;	
 	int n; //取值
 	
-	GpioController gpio;
-	AdcGpioProvider provider;
-	GpioPinAnalogInput input;
+	private GpioController gpio;
+	private AdcGpioProvider provider;
+	private GpioPinAnalogInput input;
 	
 	private void saveData() throws SQLException, IOException {
 		dao.exSql("INSERT INTO adlog(val,original)VALUES("+num+","+n+");");
 	}
 	
+	final SimpleDateFormat sf=new SimpleDateFormat("yyyy-MM-dd");
+	final SimpleDateFormat sf1=new SimpleDateFormat("HH:mm.ss");
+	String day, time;
+	Date now;
+	
 	//更新時間
 	private void setTime(){
-		c.setTime(new Date());
-		year=c.get(Calendar.YEAR);
-		month=c.get(Calendar.MONTH)+1;
-		day=c.get(Calendar.DAY_OF_MONTH);
-		hh=c.get(Calendar.HOUR_OF_DAY);
-		mm=c.get(Calendar.MINUTE);
-		ss=c.get(Calendar.SECOND);
+		now=new Date();
+		day=sf.format(now);
+		time=sf1.format(now);	
 	}	
 	
 	int cs, cm, ch, cd;
@@ -112,8 +94,9 @@ public class Controller implements Initializable {
 	
 	//計數器
 	private void count(){		
-		cs++;
-		dataQ.add(num);
+		cs++;		
+		dataQMini.add(pow(nv));
+		dataQMax.add(pow(mv));
 		if(s==0){//秒計為0時-取每分鐘值
 			smin=num;
 			smax=num;
@@ -190,83 +173,119 @@ public class Controller implements Initializable {
 			dataMMax.add(dmax);			
 			cd=0;
 			d=0;
-			//cw++;
 		}
 	}	
 	
 	//加權值
+	final double POWN1=1/1275d;
+	final double POWN2=1/1024d;
+	final double POWN3=1/1053d;
+	final double POWN4=1/743d;
 	private int pow(int n){
-		//235
-		double step=0.0043478260869565d;
-		if(n<235){
-			return 0;
+		//0~1.25
+		if(n<=1275){			
+			return (int)Math.pow(10, 1+(n*POWN1));
 		}		
-		//205~409
-		if(n>=230 && n<460){	
-			return (int)Math.pow(10, 1+((n-230)*step));
+		//1.25~2.50
+		if(n>1275 && n<=2299){	
+			return (int)Math.pow(10, 2+((n-1275)*POWN2));
 		}
-		//411~614
-		if(n>=460 && n<690){
-			return (int)Math.pow(10, 2+((n-460)*step));
+		//2.50~3.75
+		if(n>2299 && n<=3352){
+			return (int)Math.pow(10, 3+((n-2299)*POWN3));
 		}
-		//615~819
-		if(n>=690 && n<920){
-			return (int)Math.pow(10, 3+((n-690)*step));
-		}
-		//820~1025
-		if(n>=920){
-			return (int)Math.pow(10, 4+((n-920)*step));
+		//3.75+
+		if(n>3352){
+			return (int)Math.pow(10, 4+((n-3352)*POWN4));
 		}		
 		return 0;
 	}
 	
+	int mv;//取樣取大值
+	int nv;//取樣最小值
+    int vc;//取樣次數
+	//監聽器
+	private GpioPinListenerAnalog listener = new GpioPinListenerAnalog(){            
+        public void handleGpioPinAnalogValueChangeEvent(GpioPinAnalogValueChangeEvent event){
+        	n=(int)event.getValue();        	
+        	if(vc==0){
+        		nv=n;
+        		mv=n;
+        	}else{
+        		if(n>mv)mv=n;
+        		if(n<nv)nv=n;
+        	}
+        	vc++;
+        }        
+    };    
+	
+    @FXML
+    public Label avgValue;
+    @FXML
+    public Label minValue;
+    @FXML
+    public Label maxValue;
+    @FXML
+    public Label sps;
+    @FXML
+    public Label LabSps;
+    @FXML
+    public Label LabMax;
+    @FXML
+    public Label LabMin;
+    @FXML
+    public Label LabAvg;
+    @FXML
+    public Label LabVal;    
+	
 	//資料排入駐列
 	private class AddToQueue implements Runnable {
-
 		public void run() {
 			//開發期間以亂數
-			if(debug){
-				n=(int) (Math.random() * (500 - 460 + 1)) + 460;
-				num = pow(n);	         				
-			}else{
-				n=(int) input.getValue();	
-				num=pow(n);
+			if(debug){	
+				n=(int)(Math.random()*(1000-800+1))+800;		
+				num = pow(n);
+				nv=num-50;
+        		mv=num+50;
+        		vc=(int)(Math.random()*(100-50+1))+50;        		      		
+			}else{							
+				num=pow(mv);
 			}			
 			//每次間隔時間執行工作
 			count();
 			setTime();//更新時間
-			try {
-				saveData();//儲存資料				
+			try {				
+				//if(!debug){
+				saveData();//儲存資料		    	
+				//}
 				Thread.sleep(interval);				
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			executor.execute(this);
-			
 			// 同步更新需起另1個執行緒
 			Platform.runLater(new Runnable() {
 				@Override
 				public void run() {
 					valx.setText(n + "");	
-					val.setText(num + "");
-					yearValue.setText(String.valueOf(year)+"/");
-					dayValue.setText(String.valueOf( month+"/"+day ));
-					timeValue.setText(String.valueOf(hh+":"+mm+"."+ss));
+					val.setText(num+"");					
+					yearValue.setText(day);
+					timeValue.setText(time);	
 					
+					sps.setText(String.valueOf(vc));
+		            minValue.setText(String.valueOf(nv));
+		            maxValue.setText(String.valueOf(mv));
+			    	
 					//更新圖表
 					addDataToSeries();
-					if(cs==0){					
-						addDataToHourSeries();
-					}
-					if(cm==0){
-						addDataToDaySeries();
-					}
-					if(ch==0){
-						addDataToWeekSeries();
-					}
-					if(cd==0){
-						addDataToMonthSeries();
-					}
+					if(cs==0){addDataToHourSeries();}
+					if(cm==0){addDataToDaySeries();}
+					if(ch==0){addDataToWeekSeries();}
+					if(cd==0){addDataToMonthSeries();}
+					
+					vc=0;					
+					nv=0;
+			    	mv=0;
 				}
 			});
 		}
@@ -278,19 +297,27 @@ public class Controller implements Initializable {
 	@FXML
 	private NumberAxis yAxis;
 	
-	private ConcurrentLinkedQueue<Number> dataQ = new ConcurrentLinkedQueue<Number>();	
-	private Series series;
+	//private ConcurrentLinkedQueue<Number> dataQ = new ConcurrentLinkedQueue<Number>();	
+	private ConcurrentLinkedQueue<Number> dataQMini = new ConcurrentLinkedQueue<Number>();
+	private ConcurrentLinkedQueue<Number> dataQMax = new ConcurrentLinkedQueue<Number>();
+	//private Series series;
+	private Series series_min;
+	private Series series_max;
 	private int seriesData = 0;
 	
 	private void addDataToSeries() {		
 		for (int i = 0; i < 60; i++) {
-			if (dataQ.isEmpty()){
+			if (dataQMax.isEmpty()){
 				break;
 			}			
-			series.getData().add(new AreaChart.Data(seriesData++, dataQ.remove()));
+			//series.getData().add(new AreaChart.Data(seriesData++, dataQ.remove()));
+			series_min.getData().add(new AreaChart.Data(seriesData++, dataQMini.remove()));			
+			series_max.getData().add(new AreaChart.Data(seriesData-1, dataQMax.remove()));
 		}
-		if (series.getData().size() > 60) {
-			series.getData().remove(0, (series.getData().size() - 60));
+		if (series_min.getData().size() > 60) {
+			//series_min.getData().remove(0, (series.getData().size() - 60));
+			series_min.getData().remove(0, (series_min.getData().size() - 61));
+			series_max.getData().remove(0, (series_max.getData().size() - 61));
 		}
 		xAxis.setLowerBound(seriesData - 60);
 		xAxis.setUpperBound(seriesData - 1);		
@@ -315,17 +342,12 @@ public class Controller implements Initializable {
 	private void addDataToHourSeries() {		
 		
 		for (int i = 0; i < 61; i++) {
-			if (dataH.isEmpty()){
-				break;
-			}		
-			
+			if(dataH.isEmpty()){break;}
 			series_h.getData().add(new AreaChart.Data(seriesData_h++, dataH.remove()));				
 			series_h_min.getData().add(new AreaChart.Data(seriesData_h-1, dataHMini.remove()));			
-			series_h_max.getData().add(new AreaChart.Data(seriesData_h-1, dataHMax.remove()));
-			
-			
+			series_h_max.getData().add(new AreaChart.Data(seriesData_h-1, dataHMax.remove()));			
 		}
-		if (series_h.getData().size() > 61) {
+		if (series_h.getData().size() > 61){
 			series_h.getData().remove(0, (series_h.getData().size() - 61));
 			series_h_min.getData().remove(0, (series_h_min.getData().size() - 61));
 			series_h_max.getData().remove(0, (series_h_max.getData().size() - 61));
@@ -433,44 +455,38 @@ public class Controller implements Initializable {
 		}
 		xAxis_m.setLowerBound(seriesData_m - 4);
 		xAxis_m.setUpperBound(seriesData_m - 1);
-	}
+	}    
 	
-	
-	public void initialize(URL url, ResourceBundle rb) {
-		//Font f=Font.loadFont(Main.class.getResource("/fonts/elektra.ttf").toExternalForm(), );
-		
-		valx.setFont(Font.loadFont(Main.class.getResource("/fonts/elektra.ttf").toExternalForm(), 24));
-		val.setFont(Font.loadFont(Main.class.getResource("/fonts/digital.ttf").toExternalForm(), 160));
-		
-		yearValue.setFont(Font.loadFont(Main.class.getResource("/fonts/elektra.ttf").toExternalForm(), 48));
-		timeValue.setFont(Font.loadFont(Main.class.getResource("/fonts/elektra.ttf").toExternalForm(), 48));
-		dayValue.setFont(Font.loadFont(Main.class.getResource("/fonts/elektra.ttf").toExternalForm(), 48));
-		
-		
+	public void initialize(URL url, ResourceBundle rb) {		
 		if(debug){
 			interval=100;
-		}else{
+		}else{			
 			try{
 				gpio = GpioFactory.getInstance();
-				runGPIO();
+				provider = new MCP3208GpioProvider(SpiChannel.CS0);				
+				//provider = new MCP3x0xGpioProvider(pins, SpiChannel.CS0, speed, resolution, mode);				
+				input = gpio.provisionAnalogInputPin(provider, MCP3208Pin.CH0, "CH0");
+		        provider.setEventThreshold(1, input); //恕限值
+		        provider.setMonitorInterval(250); //取樣次數間隔
+		        gpio.addListener(listener, input);		        
 			}catch(Exception e){
-				
-			}
-		}        
+				e.printStackTrace();
+			}			
+		}
+		
 		//min
-		series = new AreaChart.Series<Number, Number>();
-		//series.setName("Value");
+		series_min= new AreaChart.Series<Number, Number>();
+		series_max= new AreaChart.Series<Number, Number>();
 		xAxis.setForceZeroInRange(false);
 		xAxis.setAutoRanging(false);
 		xAxis.setTickLabelsVisible(false);
 		sc.setAnimated(false);
-		sc.getData().add(series);
+		sc.getData().addAll(series_max, series_min);
 		
 		//hour
 		series_h = new AreaChart.Series<Number, Number>();
 		series_h_min= new AreaChart.Series<Number, Number>();
 		series_h_max= new AreaChart.Series<Number, Number>();		
-		//series_h.setName("Avg Value");
 		xAxis_h.setForceZeroInRange(false);
 		xAxis_h.setAutoRanging(false);
 		xAxis_h.setTickLabelsVisible(false);
@@ -507,48 +523,10 @@ public class Controller implements Initializable {
 		sc_m.setAnimated(false);
 		sc_m.getData().addAll(series_m_max, series_m, series_m_min);
 		
-		runChart();
-		
-		
-	}
-
-	private void runChart() {
-		executor = Executors.newCachedThreadPool();
+		executor = Executors.newCachedThreadPool();		
 		addToQueue = new AddToQueue();
-		executor.execute(addToQueue);
+		executor.execute(addToQueue);	
 	}
-	
-	private void runGPIO() throws IOException{		
-		provider = new MCP3008GpioProvider(SpiChannel.CS0);		
-        input = gpio.provisionAnalogInputPin(provider, MCP3008Pin.CH0, "CH0");
-        //provider.setEventThreshold(100, input); 
-        //provider.setMonitorInterval(500); // milliseconds	
-	}
-	
-	/*private void exit(ActionEvent event) {
-		Alert alert = new Alert(AlertType.CONFIRMATION); // 實體化Alert對話框物件，並直接在建構子設定對話框的訊息類型
-		alert.setTitle("關閉程式"); //設定對話框視窗的標題列文字
-		alert.setHeaderText(""); //設定對話框視窗裡的標頭文字。若設為空字串，則表示無標頭
-		alert.setContentText("是否立即結束程式？"); //設定對話框的訊息文字
-		Optional<ButtonType> opt = alert.showAndWait();
-		final ButtonType rtn = opt.get(); //可以直接用「alert.getResult()」來取代
-		System.out.println(rtn);
-		if (rtn == ButtonType.OK) {		    
-		    Platform.exit(); // 結束程式
-		} else if(rtn == ButtonType.CANCEL){		    
-		    Alert alert2 = new Alert(AlertType.INFORMATION); // 實體化Alert對話框物件，並直接在建構子設定對話框的訊息類型
-		    alert2.setTitle("小提示"); //設定對話框視窗的標題列文字
-		    alert2.setHeaderText("現在該做什麼？"); //設定對話框視窗裡的標頭文字。若設為空字串，則表示無標頭
-		    alert2.setContentText("請按下「確定」按鈕。"); //設定對話框的訊息文字
-		    alert2.showAndWait(); //顯示對話框，並等待對話框被關閉時才繼續執行之後的程式
-		}
-		if(!debug){
-			gpio.shutdown();
-		}
-		
-		System.exit(0);
-	}*/
-	
 	
 	private String getPath(){		
 		if(debug){
@@ -558,7 +536,6 @@ public class Controller implements Initializable {
 			return "/media/pi/"+file.list()[0]+"/";
 		}		
 	}
-	
 	
 	private void write(List<Map>list, String fileName) throws SQLException{		
 		Writer w=new Writer();
@@ -602,7 +579,7 @@ public class Controller implements Initializable {
 	}
 	
 	private String getRange(int type){
-		SimpleDateFormat sf=new SimpleDateFormat("yyyy-MM-dd");
+		
 		Calendar c=Calendar.getInstance();
 		//day
 		if(type==0){
@@ -626,7 +603,7 @@ public class Controller implements Initializable {
 	@FXML
 	private void save24(ActionEvent event) throws SQLException {		
 		List list=dao.sqlGet("SELECT * FROM adlog WHERE time>'"+getRange(0)+"'");		
-		write(list, "log_day");		
+		write(list, "log_day.csv");		
 		Dialogs d=Dialogs.create();
 		d.message("Success!");
 		d.addButton("Close", Ev);			
@@ -662,7 +639,6 @@ public class Controller implements Initializable {
 	
 	@FXML
 	private void saveCustom(ActionEvent event) throws SQLException {
-		//SimpleDateFormat sf=new SimpleDateFormat("yyyy-MM-dd");
 		if(begin==null){
 			begin.setValue(LocalDate.now());
 		}
@@ -686,5 +662,4 @@ public class Controller implements Initializable {
 		d.addButton("Close", Ev);			
 		d.show();
 	}
-
 }

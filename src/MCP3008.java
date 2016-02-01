@@ -52,7 +52,7 @@ import com.pi4j.io.spi.SpiDevice;
  *
  * @author Christian Wehrli, Robert Savage
  */
-public class Test {
+public class MCP3008 {
 
     public static void main(String args[]) throws Exception {
 
@@ -83,8 +83,7 @@ public class Test {
 
         // Provision gpio analog input pins for all channels of the MCP3008.
         // (you don't have to define them all if you only use a subset in your project)
-        final GpioPinAnalogInput input=gpio.provisionAnalogInputPin(provider, MCP3008Pin.CH0, "MyAnalogInput-CH0");;
-        
+        final GpioPinAnalogInput input=gpio.provisionAnalogInputPin(provider, MCP3008Pin.CH0, "MyAnalogInput-CH0");
 
         // Keep this sample program running for 10 minutes
         for (int count = 0; count < 600; count++) {
@@ -93,7 +92,7 @@ public class Test {
             // Print current analog input conversion values from each input channel
             //for(GpioPinAnalogInput input : inputs){
                 sb.append(" \t[" + input.getValue() + "] ");
-           // }
+            //}
 
             // Print out all analog input conversion values
             System.out.println("<MCP3008 VALUES> " + sb.toString());

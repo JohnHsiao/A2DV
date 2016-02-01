@@ -15,7 +15,7 @@
       
             <TabPane id="tab" prefHeight="800.0" prefWidth="480.0" tabClosingPolicy="UNAVAILABLE">
               <tabs>
-                <Tab text="Minutes">
+                <Tab text="Minute">
                   <content>
                     <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="800.0" prefWidth="480.0">
                            <children>                              
@@ -104,7 +104,7 @@
                 </Tab>
                 
                 
-                <Tab text="Options">
+                <Tab text="Option">
                   <content>
                     <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                            <children>
@@ -114,17 +114,17 @@
                            </font></Button>
                         <DatePicker fx:id="begin" layoutX="5.0" layoutY="550.0" prefHeight="60.0" prefWidth="470.0" />
                         <DatePicker fx:id="end" layoutX="7.0" layoutY="620.0" prefHeight="60.0" prefWidth="470.0" />
-                        <Button layoutX="6.0" layoutY="160.0" mnemonicParsing="false" onAction="#save24" prefWidth="470.0" text="Past 24 Hours">
+                        <Button layoutX="6.0" layoutY="160.0" mnemonicParsing="false" onAction="#save24" prefHeight="60.0" prefWidth="470.0" text="Past 24 Hours">
                            <font>
                               <Font size="34.0" />
                            </font>
                         </Button>
-                        <Button layoutX="6.0" layoutY="238.0" mnemonicParsing="false" onAction="#saveWeek" prefHeight="50.0" prefWidth="470.0" text="Past Week">
+                        <Button layoutX="6.0" layoutY="238.0" mnemonicParsing="false" onAction="#saveWeek" prefHeight="60.0" prefWidth="470.0" text="Past Week">
                            <font>
                               <Font size="34.0" />
                            </font>
                         </Button>
-                        <Button layoutX="6.0" layoutY="315.0" mnemonicParsing="false" onAction="#saveMonth" prefHeight="20.0" prefWidth="470.0" text="Past Month">
+                        <Button layoutX="6.0" layoutY="315.0" mnemonicParsing="false" onAction="#saveMonth" prefHeight="60.0" prefWidth="470.0" text="Past Month">
                            <font>
                               <Font size="34.0" />
                            </font>
@@ -147,28 +147,31 @@
             </TabPane>
       <Group layoutY="35.0">
          <children>
-         <Label fx:id="val" alignment="BOTTOM_RIGHT" layoutX="108.0" layoutY="42.0" prefHeight="100.0" prefWidth="371.0" text="0000" />
+         <Label fx:id="val" alignment="CENTER_RIGHT" contentDisplay="RIGHT" layoutX="92.0" layoutY="47.0" prefHeight="100.0" prefWidth="388.0" styleClass="mainVal" text="0000" textAlignment="RIGHT" />
             
                                                           
-                  <Label fx:id="timeValue" layoutX="306.0" layoutY="6.0" prefHeight="47.0" prefWidth="182.0" text="00:00.00">
+                  <Label fx:id="timeValue" alignment="CENTER_RIGHT" layoutX="295.0" layoutY="6.0" prefHeight="47.0" prefWidth="186.0" styleClass="timeVal" text="00:00.00">
                      <font>
                         <Font size="36.0" />
                      </font>
                   </Label>
-                  <Label fx:id="yearValue" layoutX="7.0" layoutY="6.0" prefHeight="47.0" prefWidth="127.0" styleClass="lab" text="2016" textAlignment="CENTER">
+                  <Label fx:id="yearValue" layoutX="1.0" layoutY="6.0" prefHeight="47.0" prefWidth="233.0" styleClass="timeVal" text="2016" textAlignment="CENTER">
                      <font>
                         <Font size="36.0" />
                      </font>
                   </Label>
-                  <Label fx:id="dayValue" layoutX="125.0" layoutY="6.0" prefHeight="47.0" prefWidth="138.0" text="01/22" textAlignment="CENTER">
-                     <font>
-                        <Font size="36.0" />
-                     </font>
-                  </Label>
-            <Label fx:id="valx" alignment="BOTTOM_LEFT" layoutX="10.0" layoutY="66.0" prefHeight="100.0" prefWidth="123.0" text="0000" />
-            <Label fx:id="maxValue" layoutX="65.0" layoutY="59.0" text="Label" />
-            <Label fx:id="minValue" layoutX="65.0" layoutY="85.0" text="Label" />
-            <Label fx:id="avgValue" layoutX="65.0" layoutY="116.0" text="Label" />
+            <Group layoutX="-8.0" layoutY="4.0">
+               <children>
+                  <Label fx:id="sps" layoutX="35.0" layoutY="43.0" prefHeight="24.0" prefWidth="100.0" styleClass="labelVal" text="0" />
+                  <Label fx:id="minValue" layoutX="35.0" layoutY="103.0" prefHeight="24.0" prefWidth="100.0" styleClass="labelVal" text="0" />
+                  <Label fx:id="maxValue" layoutX="35.0" layoutY="73.0" prefHeight="24.0" prefWidth="100.0" styleClass="labelVal" text="0" />
+                  <Label fx:id="valx" layoutX="35.0" layoutY="134.0" prefHeight="24.0" prefWidth="100.0" styleClass="labelVal" text="0" />
+                  <Label fx:id="LabSps" alignment="TOP_LEFT" layoutX="10.0" layoutY="46.0" prefWidth="30.0" styleClass="labelTag" text="Sps." />
+                  <Label alignment="TOP_LEFT" layoutX="10.0" layoutY="77.0" prefWidth="30.0" styleClass="labelTag" text="Max." />
+                  <Label fx:id="LabMax" alignment="TOP_LEFT" layoutX="10.0" layoutY="107.0" prefWidth="30.0" styleClass="labelTag" text="Min." />
+                  <Label fx:id="LabVal" alignment="TOP_LEFT" layoutX="10.0" layoutY="138.0" prefWidth="30.0" styleClass="labelTag" text="Val." />
+               </children>
+            </Group>
          </children>
       </Group>
    </children>

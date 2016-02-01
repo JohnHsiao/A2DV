@@ -1,0 +1,87 @@
+@font-face {
+    font-family:'Ubuntu Mono';
+    src: url("UbuntuMono-R.ttf");
+}
+
+@font-face {
+    font-family:digital-7;
+    src: url("digital.ttf");
+}
+
+@font-face {
+    font-family:Elektra;
+    src: url("elektra.ttf");
+}
+
+#tab{    
+    -fx-text-fill: white;
+    -fx-font-family: "Ubuntu Mono";
+    -fx-font-weight: bold;
+    -fx-font-size:18px;    
+}
+
+.button{
+	-fx-font-family:'Ubuntu Mono';
+	-fx-font-size:36px;
+	
+}
+
+.labelTag{    
+    -fx-font-size:12px;
+    -fx-font-family:'Ubuntu Mono';
+}
+
+.labelVal{	
+    -fx-font-size:24px;
+    -fx-font-family:Elektra;
+}
+
+.timeVal{
+	-fx-font-size:48px;
+    -fx-font-family:Elektra;
+}
+
+.mainVal{
+    -fx-font-size:160px;
+    -fx-font-family:digital-7;	
+    -fx-text-alignment:right;
+}
+
+.default-color0.chart-area-symbol { -fx-background-color: #e9967a, #ffa07a; }
+.default-color1.chart-area-symbol { -fx-background-color: #20b2aa, #3cfd9e; }
+.default-color2.chart-area-symbol { -fx-background-color: #0072cc, #55b4ff; }
+ 
+.default-color0.chart-series-area-line { -fx-stroke: #e9967a; }
+.default-color1.chart-series-area-line { -fx-stroke: #66CDAA; }
+.default-color2.chart-series-area-line { -fx-stroke: #0072cc; }
+ 
+.default-color0.chart-series-area-fill { -fx-fill: #e9967a; -fx-opacity:0.2;}
+.default-color1.chart-series-area-fill { -fx-fill: #66CDAA; -fx-opacity:0.3;}
+.default-color2.chart-series-area-fill { -fx-fill: #0072cc ;-fx-opacity:0.1;}
+ 
+/*#welcome-text {
+    -fx-font-size: 72px;
+    -fx-font-family: "Serif";
+    -fx-fill: #818181;
+    -fx-font-weight: bold;
+    -fx-effect: innershadow( three-pass-box , rgba(0,0,0,0.7) , 2, 0.5 , 0 , 0 ); 
+}
+#actiontarget {
+    -fx-fill: FIREBRICK;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow( gaussian , rgba(255,255,255,0.5) , 0,0,0,1 );  
+}
+ 
+.button {
+    -fx-font-size: 24px;
+    -fx-text-fill: white;
+    -fx-font-family: "Serif";
+    -fx-font-weight: bold;
+    -fx-background-color: linear-gradient(#61a2b1, #2A5058);
+    -fx-effect: dropshadow( three-pass-box , rgba(0,0,0,0.6) , 5, 0.0 , 0 , 1 );
+}
+ 
+.button:hover {
+    -fx-background-color: linear-gradient(#2A5058, #61a2b1);
+}*/

@@ -18,7 +18,7 @@ public class Main extends Application {
 		try {
 			Parent root = (Parent)fxmlLoader.load();
 			Scene scene = new Scene(root);
-			scene.getStylesheets().add(getClass().getResource("Main.css").toExternalForm());
+			scene.getStylesheets().add(getClass().getResource("css/Main.css").toExternalForm());
 			primaryStage.setScene(scene);
 			//primaryStage.setFullScreen(true);
 			primaryStage.show();
