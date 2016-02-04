@@ -17,8 +17,8 @@ import org.magiclen.dialog.Dialog.DialogButtonEvent;
 import org.magiclen.dialog.Dialogs;
 
 import com.pi4j.gpio.extension.base.AdcGpioProvider;
-import com.pi4j.gpio.extension.mcp.MCP3208GpioProvider;
-import com.pi4j.gpio.extension.mcp.MCP3208Pin;
+import com.pi4j.gpio.extension.mcp.MCP3008GpioProvider;
+import com.pi4j.gpio.extension.mcp.MCP3008Pin;
 import com.pi4j.io.gpio.GpioController;
 import com.pi4j.io.gpio.GpioFactory;
 import com.pi4j.io.gpio.GpioPinAnalogInput;
@@ -37,6 +37,7 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TabPane;
 
 public class Controller implements Initializable {
@@ -75,6 +76,9 @@ public class Controller implements Initializable {
 	
 	private void saveData() throws SQLException, IOException {
 		dao.exSql("INSERT INTO adlog(val,original)VALUES("+num+","+n+");");
+		vc=0;					
+		nv=0;
+    	mv=0;
 	}
 	
 	final SimpleDateFormat sf=new SimpleDateFormat("yyyy-MM-dd");
@@ -177,37 +181,79 @@ public class Controller implements Initializable {
 	}	
 	
 	//加權值
-	final double POWN1=1/1275d;
+	/*final double POWN1=1/1275d;
 	final double POWN2=1/1024d;
 	final double POWN3=1/1053d;
-	final double POWN4=1/743d;
+	final double POWN4=1/743d;*/
+	final double POW=0.00390625;
+	/*final double POWN1=1/275d;
+	final double POWN2=1/273d;
+	final double POWN3=1/260d;
+	final double POWN4=1/219d;*/
 	private int pow(int n){
-		//0~1.25
-		if(n<=1275){			
+		/*
+		//0~1.25v 8.08
+		if(n<=1309){			
 			return (int)Math.pow(10, 1+(n*POWN1));
 		}		
 		//1.25~2.50
-		if(n>1275 && n<=2299){	
+		if(n>1309 && n<=2412){	
 			return (int)Math.pow(10, 2+((n-1275)*POWN2));
 		}
 		//2.50~3.75
-		if(n>2299 && n<=3352){
+		if(n>2412 && n<=3437){
 			return (int)Math.pow(10, 3+((n-2299)*POWN3));
 		}
-		//3.75+
-		if(n>3352){
+		//3.75+ 
+		if(n>3437){
 			return (int)Math.pow(10, 4+((n-3352)*POWN4));
+		}
+		*/
+		/*
+		//0~1.25V, 8.056mA
+		if(n<=274){			
+			return (int)Math.pow(10, 1+(n*POWN1));
 		}		
-		return 0;
+		//1.25~2.50, 12.055mA
+		if(n>274 && n<=546){	
+			return (int)Math.pow(10, 2+((n-274)*POWN2));
+		}
+		//2.50~3.75,  16.05mA
+		if(n>546 && n<=805){
+			return (int)Math.pow(10, 3+((n-546)*POWN3));
+		}
+		//3.75~4.87, 19.65mA
+		if(n>805 && n<1023){
+			return (int)Math.pow(10, 4+((n-805)*POWN4));
+		}
+		*/
+		if(n>0 && n<=268){			
+			return (int)Math.pow(10, 1+(n*POW));
+		}		
+		//1.25~2.50, 12.055mA
+		if(n>268 && n<=524){	
+			return (int)Math.pow(10, 2+((n-268)*POW));
+		}
+		//2.50~3.75,  16.05mA
+		if(n>524 && n<=780){
+			return (int)Math.pow(10, 3+((n-524)*POW));
+		}
+		//3.75~4.87, 19.65mA
+		if(n>780 && n<=1023){
+			return (int)Math.pow(10, 4+((n-780)*POW));
+		}
+		return 99999;
 	}
 	
 	int mv;//取樣取大值
 	int nv;//取樣最小值
     int vc;//取樣次數
+    short r;
 	//監聽器
 	private GpioPinListenerAnalog listener = new GpioPinListenerAnalog(){            
         public void handleGpioPinAnalogValueChangeEvent(GpioPinAnalogValueChangeEvent event){
-        	n=(int)event.getValue();        	
+        	n=(int)event.getValue();
+        	//if(r>0)n=r;
         	if(vc==0){
         		nv=n;
         		mv=n;
@@ -216,7 +262,18 @@ public class Controller implements Initializable {
         		if(n<nv)nv=n;
         	}
         	vc++;
-        }        
+        	//
+        	Platform.runLater(new Runnable() {
+				@Override
+				public void run() {
+					sps.setText(vc+"");
+		            minValue.setText(nv+"");
+		            maxValue.setText(mv+"");
+				}
+			});
+        }
+        
+        
     };    
 	
     @FXML
@@ -243,12 +300,13 @@ public class Controller implements Initializable {
 		public void run() {
 			//開發期間以亂數
 			if(debug){	
-				n=(int)(Math.random()*(1000-800+1))+800;		
-				num = pow(n);
-				nv=num-50;
-        		mv=num+50;
-        		vc=(int)(Math.random()*(100-50+1))+50;        		      		
-			}else{							
+				n=(int)(Math.random()*(1350-1320+1))+1320;				
+				nv=n-(int)(Math.random()*(50-1+1))+1;
+        		mv=n+(int)(Math.random()*(50-1+1))+1;
+        		num=pow(mv);
+        		vc=(int)(Math.random()*(56-30+1))+30;        		      		
+			}else{
+			
 				num=pow(mv);
 			}			
 			//每次間隔時間執行工作
@@ -270,22 +328,14 @@ public class Controller implements Initializable {
 					valx.setText(n + "");	
 					val.setText(num+"");					
 					yearValue.setText(day);
-					timeValue.setText(time);	
-					
-					sps.setText(String.valueOf(vc));
-		            minValue.setText(String.valueOf(nv));
-		            maxValue.setText(String.valueOf(mv));
+					timeValue.setText(time);					
 			    	
 					//更新圖表
 					addDataToSeries();
 					if(cs==0){addDataToHourSeries();}
 					if(cm==0){addDataToDaySeries();}
 					if(ch==0){addDataToWeekSeries();}
-					if(cd==0){addDataToMonthSeries();}
-					
-					vc=0;					
-					nv=0;
-			    	mv=0;
+					if(cd==0){addDataToMonthSeries();}					
 				}
 			});
 		}
@@ -459,15 +509,15 @@ public class Controller implements Initializable {
 	
 	public void initialize(URL url, ResourceBundle rb) {		
 		if(debug){
-			interval=100;
+			interval=1000;
 		}else{			
 			try{
 				gpio = GpioFactory.getInstance();
-				provider = new MCP3208GpioProvider(SpiChannel.CS0);				
+				provider = new MCP3008GpioProvider(SpiChannel.CS0);				
 				//provider = new MCP3x0xGpioProvider(pins, SpiChannel.CS0, speed, resolution, mode);				
-				input = gpio.provisionAnalogInputPin(provider, MCP3208Pin.CH0, "CH0");
-		        provider.setEventThreshold(1, input); //恕限值
-		        provider.setMonitorInterval(250); //取樣次數間隔
+				input = gpio.provisionAnalogInputPin(provider, MCP3008Pin.CH0, "CH0");
+		        //provider.setEventThreshold(10, input); //恕限值
+		        provider.setMonitorInterval(50); //取樣次數間隔
 		        gpio.addListener(listener, input);		        
 			}catch(Exception e){
 				e.printStackTrace();
@@ -480,7 +530,9 @@ public class Controller implements Initializable {
 		xAxis.setForceZeroInRange(false);
 		xAxis.setAutoRanging(false);
 		xAxis.setTickLabelsVisible(false);
+		
 		sc.setAnimated(false);
+		sc.setCreateSymbols(false);
 		sc.getData().addAll(series_max, series_min);
 		
 		//hour
@@ -491,6 +543,7 @@ public class Controller implements Initializable {
 		xAxis_h.setAutoRanging(false);
 		xAxis_h.setTickLabelsVisible(false);
 		sc_h.setAnimated(false);
+		sc_h.setCreateSymbols(false);
 		sc_h.getData().addAll(series_h_max, series_h, series_h_min);
 		
 		//day		
@@ -501,6 +554,7 @@ public class Controller implements Initializable {
 		xAxis_d.setAutoRanging(false);
 		xAxis_d.setTickLabelsVisible(false);
 		sc_d.setAnimated(false);
+		sc_d.setCreateSymbols(false);
 		sc_d.getData().addAll(series_d_max, series_d, series_d_min);
 		
 		//week
@@ -511,6 +565,7 @@ public class Controller implements Initializable {
 		xAxis_w.setAutoRanging(false);
 		xAxis_w.setTickLabelsVisible(false);
 		sc_w.setAnimated(false);
+		sc_w.setCreateSymbols(false);
 		sc_w.getData().addAll(series_w_max, series_w, series_w_min);
 		
 		//month
@@ -521,6 +576,7 @@ public class Controller implements Initializable {
 		xAxis_m.setAutoRanging(false);
 		xAxis_m.setTickLabelsVisible(false);
 		sc_m.setAnimated(false);
+		sc_m.setCreateSymbols(false);
 		sc_m.getData().addAll(series_m_max, series_m, series_m_min);
 		
 		executor = Executors.newCachedThreadPool();		
@@ -662,4 +718,42 @@ public class Controller implements Initializable {
 		d.addButton("Close", Ev);			
 		d.show();
 	}
+	
+	@FXML
+	public DatePicker sysdate;
+	@FXML
+	public Slider syshh;
+	@FXML
+	public Slider sysmm;
+	@FXML
+	public Label syshhVal;
+	@FXML
+	public Label sysmmVal;
+	
+	@FXML
+	private void setime(ActionEvent event) {
+		String s[]=new String[]{"date", "--set=\""+sysdate.getValue(), syshhVal.getText()+":"+sysmmVal.getText()+"\""};
+		try{
+			
+			Runtime.getRuntime().exec(new String[]{"date","--set\"",sysdate.getValue()+" "+syshhVal.getText()+":"+sysmmVal.getText()+"\""});
+			System.exit(5);
+		}catch(Exception e){
+			e.printStackTrace();
+			try{
+				Runtime.getRuntime().exec(new String[]{"date","--set","2011-12-07 01:20:15.962"});
+			}catch(Exception e1){
+				e1.printStackTrace();
+			}
+		}
+	}
+	@FXML
+	private void setSyshhVal(){
+		syshhVal.setText((int)syshh.getValue()+"");
+	}
+	
+	@FXML
+	private void setSysmmVal(){
+		sysmmVal.setText((int)sysmm.getValue()+"");
+	}
+	
 }

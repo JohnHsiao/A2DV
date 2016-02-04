@@ -108,37 +108,44 @@
                   <content>
                     <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                            <children>
-                        <Button layoutX="5.0" layoutY="688.0" mnemonicParsing="false" onAction="#close" prefHeight="60.0" prefWidth="470.0" text="Shut Down Service">
+                        <Button layoutX="5.0" layoutY="688.0" mnemonicParsing="false" onAction="#close" prefHeight="36.0" prefWidth="470.0" text="Shut Down Service">
                            <font>
-                              <Font size="34.0" />
+                              <Font size="18.0" />
                            </font></Button>
-                        <DatePicker fx:id="begin" layoutX="5.0" layoutY="550.0" prefHeight="60.0" prefWidth="470.0" />
-                        <DatePicker fx:id="end" layoutX="7.0" layoutY="620.0" prefHeight="60.0" prefWidth="470.0" />
-                        <Button layoutX="6.0" layoutY="160.0" mnemonicParsing="false" onAction="#save24" prefHeight="60.0" prefWidth="470.0" text="Past 24 Hours">
+                        <DatePicker fx:id="begin" layoutX="7.0" layoutY="388.0" prefHeight="36.0" prefWidth="470.0" />
+                        <DatePicker fx:id="end" layoutX="7.0" layoutY="343.0" prefHeight="36.0" prefWidth="470.0" />
+                        <Button layoutX="6.0" layoutY="160.0" mnemonicParsing="false" onAction="#save24" prefHeight="36.0" prefWidth="470.0" text="Past 24 Hours">
                            <font>
-                              <Font size="34.0" />
+                              <Font size="18.0" />
                            </font>
                         </Button>
-                        <Button layoutX="6.0" layoutY="238.0" mnemonicParsing="false" onAction="#saveWeek" prefHeight="60.0" prefWidth="470.0" text="Past Week">
+                        <Button layoutX="6.0" layoutY="206.0" mnemonicParsing="false" onAction="#saveWeek" prefHeight="36.0" prefWidth="470.0" text="Past Week">
                            <font>
-                              <Font size="34.0" />
+                              <Font size="18.0" />
                            </font>
                         </Button>
-                        <Button layoutX="6.0" layoutY="315.0" mnemonicParsing="false" onAction="#saveMonth" prefHeight="60.0" prefWidth="470.0" text="Past Month">
+                        <Button layoutX="6.0" layoutY="252.0" mnemonicParsing="false" onAction="#saveMonth" prefHeight="36.0" prefWidth="470.0" text="Past Month">
                            <font>
-                              <Font size="34.0" />
+                              <Font size="18.0" />
                            </font>
                         </Button>
-                        <Button layoutX="7.0" layoutY="393.0" mnemonicParsing="false" onAction="#saveYear" prefHeight="60.0" prefWidth="470.0" text="Past Year">
+                        <Button layoutX="7.0" layoutY="298.0" mnemonicParsing="false" onAction="#saveYear" prefHeight="36.0" prefWidth="470.0" text="Past Year">
                            <font>
-                              <Font size="34.0" />
+                              <Font size="18.0" />
                            </font>
                         </Button>
-                        <Button layoutX="6.0" layoutY="471.0" mnemonicParsing="false" onAction="#saveCustom" prefHeight="60.0" prefWidth="470.0" text="Custom Range ...">
+                        <Button layoutX="7.0" layoutY="432.0" mnemonicParsing="false" onAction="#saveCustom" prefHeight="36.0" prefWidth="470.0" text="Custom Range">
                            <font>
-                              <Font size="34.0" />
+                              <Font size="18.0" />
                            </font>
                         </Button>
+                        <DatePicker fx:id="sysdate" layoutX="14.0" layoutY="522.0" prefHeight="36.0" prefWidth="463.0" />
+                        <Button layoutX="6.0" layoutY="644.0" mnemonicParsing="false" onAction="#setime" prefHeight="36.0" prefWidth="470.0" text="Set Time" />
+                        <Slider fx:id="syshh" blockIncrement="1.0" layoutX="8.0" layoutY="585.0" max="23" onMouseClicked="#setSyshhVal" prefHeight="14.0" prefWidth="342.0" showTickLabels="true" showTickMarks="true" />
+                        <Slider fx:id="sysmm" blockIncrement="1.0" layoutX="7.0" layoutY="620.0" max="59" onMouseClicked="#setSysmmVal" prefHeight="14.0" prefWidth="343.0" showTickLabels="true" showTickMarks="true" snapToTicks="true" />
+                        <Label fx:id="syshhVal" layoutX="369.0" layoutY="573.0" text="0" />
+                        <Label fx:id="sysmmVal" layoutX="369.0" layoutY="608.0" text="0" />
+                        
                            </children>
                         </AnchorPane>
                   </content>
@@ -175,6 +182,9 @@
          </children>
       </Group>
    </children>
+   <cursor>
+      <Cursor fx:constant="DEFAULT" />
+   </cursor>
    <!-- cursor>
       <Cursor fx:constant="NONE" />
    </cursor-->
